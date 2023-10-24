@@ -26,8 +26,7 @@ sample.col <- rev(RColorBrewer::brewer.pal(6,"RdBu"))
 #----load data----
 
 ### load gene info
-# getwd() "/home/nico/project/01.zhugaoxiang/04.pig.RNA.MSC/05.analysis/pgEpiSC/zgx_pg"
-pig.gene.info <- import('~/project/99.gaodengfeng/01.multi.embory/06.analysis/00.datainfo/01.pig/01.mydata/sus.105.xlsx',which = 'pig_105_clean')
+pig.gene.info <- import('~/project/99.gaodengfeng/01.multi.embory/06.analysis/00.datainfo/01.pig/01.mydata/sus.105.xlsx',which = 'pig_105_clean') # gene annotation info
 pig.gene.info <- pig.gene.info[pig.gene.info$biotype == 'protein_coding' | pig.gene.info$biotype == 'lncRNA' | pig.gene.info$biotype == 'pseudogene' | pig.gene.info$biotype == 'processed_pseudogene',]
 which(pig.gene.info$genename =='DEFB1')
 pig.gene.info[10314,2] <- 'AMELY.X'
@@ -37,8 +36,8 @@ pig.gene.info[12198,2] <- 'GZMA.2'
 pig.gene.info = pig.gene.info[-c(14831),]
 
 ### input raw count
-samples <- read.table('../../../01.data/17rnaseq/rna.sample.txt',sep = '\t')
-data <- read.table('../../../04.quant/MSC.ref105.txt',header = T,sep = '\t',comment.char = '#',row.names = 1)
+samples <- read.table('../../../01.data/17rnaseq/rna.sample.txt',sep = '\t') 
+data <- read.table('../../../04.quant/MSC.ref105.txt',header = T,sep = '\t',comment.char = '#',row.names = 1) # import sample data
 data <- data[pig.gene.info[pig.gene.info$biotype=='protein_coding',]$geneid, ]
 data <- na.omit(data)
 data.clean <- data[,c(6:ncol(data))]
