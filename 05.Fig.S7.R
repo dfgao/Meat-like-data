@@ -59,3 +59,65 @@ ComplexHeatmap::pheatmap(t(scale(t(pg.pgmc.tpm.clean.cluster[,c(2:9)]))),
          breaks = unique(c(seq(-2,2, length=256))),
          right_annotation = row_anno)
 
+# Fig.S7g ------
+data.clean <- data.clean %>% rownames_to_column(var = 'geneid') %>% left_join( y = pig.gene.info[,c(1,2)], by = 'geneid')
+rownames(data.clean) <- data.clean$genename
+
+group = data.clean[mc.pick.genes,c(11:13,5:7)]
+group_list.use <- c(rep('pgEpiSC',3),rep('MC',3))
+colData = data.frame(row.names = colnames(group),group_list = group_list.use)
+
+dds <- DESeqDataSetFromMatrix(countData = group,colData = colData,design = ~group_list)
+dds <- DESeq(dds)
+plotDispEsts(dds)
+RES <- results(dds, contrast = c('group_list','MC','pgEpiSC'))
+
+pg.low_mc <- RES %>%
+  data.frame() %>%
+  rownames_to_column(var="geneid") %>%
+  as_tibble() %>%
+  arrange(padj)
+pg.low_mc$change <- factor(ifelse(pg.low_mc$padj < 0.05, ifelse(pg.low_mc$log2FoldChange > 0,'MC.UP','MC.DOWN'),'NOT change'))
+pg.low_mc.sig <- dplyr::filter(pg.low_mc, padj < 0.05) %>%
+  dplyr::arrange(padj)
+
+## pg.low-pg.mc
+group = data.clean[mc.pick.genes,c(11:16)]
+group_list.use <- c(rep('pgEpiSC',3),rep('pg.MC',3))
+colData = data.frame(row.names = colnames(group),group_list = group_list.use)
+
+dds <- DESeqDataSetFromMatrix(countData = group,colData = colData,design = ~group_list)
+dds <- DESeq(dds)
+plotDispEsts(dds)
+RES <- results(dds, contrast = c('group_list','pg.MC','pgEpiSC'))
+
+pg.low_pgmc <- RES %>%
+  data.frame() %>%
+  rownames_to_column(var="geneid") %>%
+  as_tibble() %>%
+  arrange(padj)
+pg.low_pgmc$change <- factor(ifelse(pg.low_pgmc$padj < 0.05, ifelse(pg.low_pgmc$log2FoldChange > 0,'pgMC.UP','pgMC.DOWN'),'NOT change'))
+pg.low_pgmc.sig <- dplyr::filter(pg.low_pgmc, padj < 0.05) %>%
+  dplyr::arrange(padj)
+
+
+## venn for LFC > 1.5 
+DEGvenn = list(pgEpiSC.MC = pg.low_mc.sig[(pg.low_mc.sig$log2FoldChange > log2(1.5) | pg.low_mc.sig$log2FoldChange < -log2(1.5)),]$geneid, 
+               pgEpiSC.pgMC = pg.low_pgmc.sig[(pg.low_pgmc.sig$log2FoldChange > log2(1.5) | pg.low_pgmc.sig$log2FoldChange < -log2(1.5)),]$geneid)
+DEGvenn_res = Venn(DEGvenn)
+plot(DEGvenn_res,doWeights = T,type="circles")
+
+## get orth
+
+pg.low_mc.sig <- pg.low_mc.sig %>% 
+  left_join(y = pig.gene.info[,c(1:2)], by = c('geneid' = 'genename'))
+pg.low_mc.sig <- pg.low_mc.sig %>% 
+  left_join(y = orth[,c(1:4)], by = c('geneid.y' = 'geneid'))
+
+pg.low_pgmc.sig <- pg.low_pgmc.sig %>% 
+  left_join(y = pig.gene.info[,c(1:2)], by = c('geneid' = 'genename'))
+pg.low_pgmc.sig <- pg.low_pgmc.sig %>% 
+  left_join(y = orth[,c(1:4)], by = c('geneid.y' = 'geneid'))
+
+DEG.sig <- list(pg.low_mc.sig = pg.low_mc.sig, pg.low_pgmc.sig = pg.low_pgmc.sig)
+export(DEG.sig,file = '../../MSC/kmeans/pg-MC-pgMC,deg.sig.xlsx',row.names=T)
