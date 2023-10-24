@@ -59,6 +59,31 @@ ComplexHeatmap::pheatmap(t(scale(t(pg.pgmc.tpm.clean.cluster[,c(2:9)]))),
          breaks = unique(c(seq(-2,2, length=256))),
          right_annotation = row_anno)
 
+# Fig.S7f -------
+pick.genes.for.cluster.tpm.invivo <- clean_tpm[pick.genes.for.cluster.tpm.pub$gene,]
+
+annotation_col_matrix.mc <- data.frame(Group = c(rep('pgEpiSC',3), rep('pgEpiSC.MPC',2), rep('pgEpiSC.MC',3), rep('in vivo MC',3)))
+rownames(annotation_col_matrix.mc) <- c(rownames(annotation_col_matrix),'MPC.Dif.1','MPC.Dif.2','MPC.Dif.3')
+ha_left <- list(gene.type = npg.col[13:16],Group = c(col,'#9b2226'))
+names(ha_left$gene.type) = levels(pick.genes.for.cluster.tpm$gene.type)
+names(ha_left$Group) = c('pgEpiSC','pgEpiSC.MPC','pgEpiSC.MC','in vivo MC')
+
+
+ComplexHeatmap::pheatmap(log2(pick.genes.for.cluster.tpm.invivo[,c(10:12,16,17,13:15,4:6)]+1),
+                         border_color = NA,
+                         clustering_method = 'median',
+                         show_rownames = T,
+                         cluster_cols = T,cluster_rows =T ,
+                         color = scales::alpha(rev(colorRampPalette(RColorBrewer::brewer.pal(5,"RdBu"),alpha=T,bias=.6)(256)),alpha = .8),
+                         angle_col = '315',
+                         annotation_row = gene.type,
+                         annotation_col = annotation_col_matrix.mc,
+                         annotation_colors = ha_left,
+                         breaks = unique(c(seq(0,15, length=256))),
+                         fontsize_row = 6
+)
+
+
 # Fig.S7g ------
 data.clean <- data.clean %>% rownames_to_column(var = 'geneid') %>% left_join( y = pig.gene.info[,c(1,2)], by = 'geneid')
 rownames(data.clean) <- data.clean$genename
