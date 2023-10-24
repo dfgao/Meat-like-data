@@ -144,3 +144,50 @@ ggplot(test, aes(x=name, y=value, fill=Cell.type)) +
   theme(axis.title = element_text(size = 13)) +
   ggtitle('Glycolysis')
 
+# Fig.S9a ------
+meta.cor <- cor(meta_intensity_all[,-1])
+pheatmap(meta.cor,cluster_rows = F, cluster_cols = F)
+meta.cor <- cor(meta.ratio.pc_pgmc[,7:18],method = 'spearman')
+pheatmap(meta.cor,cluster_rows = F, cluster_cols = F)
+
+ann <- data.frame(Cell.type = c(rep('pgEpiSCs',6), rep('pg.MC',6)))
+rownames(ann) <- rownames(meta.cor)
+ha_top.col <- list(Cell.type = col[c(1,3)])
+names(ha_top.col$Cell.type) <- c('pgEpiSCs', 'pg.MC')
+
+pheatmap(meta.cor,
+         border_color = NA, 
+         clustering_method = 'ward.D',
+         color = scales::alpha(colorRampPalette(colors = c('#00509d','gray80','#f35b04'),alpha=T,bias=1)(256),alpha = 1),
+         angle_col = '315',
+         display_numbers = T,
+         annotation_col = ann,
+         annotation_colors = ha_top.col,
+         number_color = 'white')
+
+# Fig.S9b ------
+meta.pgmc <- t(meta_intensity_all[,2:13])
+meta.pgmc.nor <- t(meta.ratio.pc_pgmc[,7:18])
+
+meta.pgmc.info <- factor(c(rep('pgEpiSC',6), rep('pg.MC',6)), levels = c('pgEpiSC','pg.MC'))
+
+# sPLSDA
+MyResult.splsda <- splsda(meta.pgmc.nor, meta.pgmc.info, keepX = c(50,50)) 
+plotIndiv(MyResult.splsda)
+plotVar(MyResult.splsda,cex = 2) 
+
+plotIndiv(MyResult.splsda, ind.names = FALSE, legend=TRUE,
+          ellipse = TRUE, star = TRUE, title = 'sPLS-DA base on normalized data',
+          X.label = 'PLS-DA 1', Y.label = 'PLS-DA 2')
+plotVar(MyResult.splsda, cutoff=.8)
+
+# ADD background
+background <- background.predict(MyResult.splsda, comp.predicted=2,
+                                 dist = "max.dist") 
+
+plotIndiv(MyResult.splsda, comp = 1:2, group = meta.pgmc.info,
+          ind.names = FALSE, title = "Maximum distance background",
+          legend = TRUE,  background = background)
+
+# ROC
+auc.plsda <- auroc(MyResult.splsda)
